@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renderizar todas las páginas de un PDF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #F3F4F6; /* Fondo gris claro */
+    }
+    canvas {
+      width: 100% !important; /* Redimensiona el canvas */
+      height: auto !important; /* Mantiene las proporciones */
+    }
+    .canvas-container {
+      max-width: 140px; /* Tamaño visible más pequeño de la miniatura */
+      margin: auto;
+      transition: transform 0.2s ease-in-out;
+    }
+    .canvas-container:hover {
+      transform: scale(1.05); /* Pequeño efecto de zoom en hover */
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+  <!-- Contenedor principal centrado -->
+  <div class="max-w-6xl mx-auto p-8">
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-10 tracking-tight">
+      Renderizado de PDF Profesional
+    </h1>
+
+    <!-- Botón para subir un archivo PDF -->
+    <div class="flex justify-center mb-6">
+      <input type="file" id="file-input" accept="application/pdf"
+        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold text-lg rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 cursor-pointer transition duration-200 ease-in-out" />
+    </div>
+
+    <!-- Mensaje de carga -->
+    <div id="loading-message" class="text-center text-gray-500 mb-4 hidden">Cargando PDF, por favor espera...</div>
+
+    <!-- Contenedor para renderizar las páginas del PDF -->
+    <div id="pdf-pages" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8"></div>
+
+  </div>
+
+  <!-- Incluimos PDF.js desde el CDN de Cloudflare -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.7.107/pdf.min.js"></script>
+
+  <script>
+    // Referencia al input y al contenedor de las páginas
+    const fileInput = document.getElementById('file-input');
+    const pdfPagesContainer = document.getElementById('pdf-pages');
+    const loadingMessage = document.getElementById('loading-message');
+
+    // Escuchar el evento de cambio en el input para cuando se suba un archivo
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+
+      if (file && file.type === 'application/pdf') {
+        // Limpiar el contenedor de páginas antes de cargar un nuevo archivo
+        pdfPagesContainer.innerHTML = '';
+
+        // Mostrar mensaje de carga
+        loadingMessage.classList.remove('hidden');
+
+        // Crear un FileReader para leer el archivo PDF
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          const pdfData = new Uint8Array(e.target.result); // Array de bytes del PDF
+
+          // Cargar el PDF usando PDF.js
+          const loadingTask = pdfjsLib.getDocument({ data: pdfData });
+          loadingTask.promise.then((pdf) => {
+            console.log('PDF cargado correctamente');
+
+            // Ocultar mensaje de carga
+            loadingMessage.classList.add('hidden');
+
+            // Obtener el número total de páginas
+            const numPages = pdf.numPages;
+            console.log(`El PDF tiene ${numPages} páginas`);
+
+            // Renderizar cada página
+            for (let pageNumber = 1; pageNumber <= numPages; pageNumber++) {
+              renderPage(pdf, pageNumber);
+            }
+          }).catch((error) => {
+            console.error('Error al cargar el PDF:', error);
+            loadingMessage.textContent = 'Error al cargar el PDF';
+          });
+        };
+
+        // Leer el archivo PDF como un ArrayBuffer
+        reader.readAsArrayBuffer(file);
+      } else {
+        alert('Por favor selecciona un archivo PDF.');
+      }
+    });
+
+    // Función para renderizar una página
+    function renderPage(pdf, pageNumber) {
+      // Obtener la página
+      pdf.getPage(pageNumber).then((page) => {
+        console.log(`Renderizando la página ${pageNumber}`);
+
+        // Escala para alta calidad
+        const scale = 0.5; // Renderizamos a mayor escala para más detalles
+        const viewport = page.getViewport({ scale: scale });
+
+        // Crear un canvas para cada página
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        // Asegurar que el canvas no se desborde
+        canvas.classList.add('shadow-lg', 'rounded-lg', 'border', 'border-gray-300');
+
+        // Crear el contenedor de la miniatura
+        const pageContainer = document.createElement('div');
+        pageContainer.classList.add('canvas-container', 'bg-white', 'rounded-lg', 'p-3', 'shadow-lg', 'relative', 'overflow-hidden');
+
+        // Texto de número de página
+        const pageNumberText = document.createElement('p');
+        pageNumberText.classList.add('text-center', 'text-gray-500', 'mt-3', 'font-semibold');
+        pageNumberText.textContent = `Página ${pageNumber}`;
+
+        // Renderizar la página en el canvas
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+
+        // Añadir el canvas y el número de página al contenedor
+        pageContainer.appendChild(canvas);
+        pageContainer.appendChild(pageNumberText);
+        pdfPagesContainer.appendChild(pageContainer);
+
+        page.render(renderContext).promise.then(() => {
+          console.log(`Página ${pageNumber} renderizada`);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

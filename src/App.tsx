@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import MergePDFs from './pages/MergePDFs';
 import ExtractPage from './pages/ExtractPage';
+// import PdfViewer from './pages/PdfViewer';
+// import PdfViewer from './pages/PdfViewer';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +30,15 @@ const App: React.FC = () => {
                   Extraer Página
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/pdf"
+                  className="hover:text-blue-500 transition-colors duration-300"
+                >
+                  Extraer Página
+                </Link>
+              </li>
+              
             </ul>
           </div>
         </nav>
@@ -38,6 +49,7 @@ const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<MergePDFs />} />
               <Route path="/extract" element={<ExtractPage />} />
+              {/* <Route path="/pdf" element={<PdfViewer />} /> */}
             </Routes>
           </div>
         </div>
